@@ -1,14 +1,15 @@
 import { authService } from '../api/auth/auth.service.js'
 
 export function requireAuth(req, res, next) {
-	//console.log('Cookies:', req.cookies)
-	
-	if (!req.cookies) return res.status(401).send('Please login')
-	const loginToken = req.cookies.loginToken
-	//console.log('requireAuth loginToken:', loginToken);
-	const loggedinUser = authService.validateToken(loginToken)
+	try{
+		if (!req.cookies) throw new Error('No cookies found')
+		const loginToken = req.cookies.loginToken
+		const loggedinUser = authService.validateToken(loginToken)
 
-	if (!loggedinUser) return res.status(401).send('Please login')
-    req.loginToken = loggedinUser
-    next()
+		if (!loggedinUser) return res.status(401).send('Please login')
+		req.loginToken = loggedinUser
+		next()
+	} catch (err) {
+    	res.status(401).send('Please login')
+	}
 }

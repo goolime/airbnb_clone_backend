@@ -2,7 +2,7 @@ import { loggerService } from '../../services/logger.service.js'
 import { propertyService } from './property.service.js'
 import { usersService } from '../user/users.service.js'
 import { reviewService } from '../reviews/review.service.js';
-//import { ordersService } from '../order/orders.service.js'
+import { ordersService } from '../order/orders.services.js'
 
 export async function getProperties(req, res) {
 
@@ -14,8 +14,6 @@ export async function getProperties(req, res) {
         res.send(await Promise.all(properties.map(async property => await _prepForUI(property))))
     }
     catch (err) {
-        console.log('Error in getProperties controller:', err);
-        console.log(err.stack);
         loggerService.error('Cannot get properties', err)
         res.status(400).send({ err: 'Cannot get properties' })
     }
@@ -25,7 +23,7 @@ export async function getProperties(req, res) {
 export async function getProperty(req, res) {
     const { propertyId } = req.params
     try {
-        const property = await propertyService.getById(propertyId)
+        const property = await propertyService.getById(propertyId.toString())
         res.send(await _prepForUI(property))
     }
     catch (err) {
@@ -38,7 +36,8 @@ export async function removeProperty(req, res) {
     try {
         const ownerId = await propertyService.remove(propertyId)
         //usersService.removePropertyFromHost(propertyId, ownerId)
-        //ordersService.removeFutureOrdersByPropertyId(propertyId)
+        await ordersService.removeFutureOrdersByPropertyId(propertyId)
+        await reviewService.removeReviewsByPropertyId(propertyId)
         res.send({ msg: `Property ${propertyId} removed successfully` })
     } catch (err) {
         loggerService.error(`Cannot remove property ${propertyId}`, err)
@@ -46,13 +45,14 @@ export async function removeProperty(req, res) {
     }
 }
 export async function addProperty(req, res) {
-    const {name, type,imgUrls, price, summary, capacity, amenities, accessibility, bathrooms, bedrooms, beds, rules, labels} = req.body
+    const {name, type,imgUrls, price, summary, capacity, amenities, accessibility, bathrooms, bedrooms, beds, rules, labels, loc } = req.body
     if (!name || !type || !price || !summary || !capacity || !amenities || !accessibility || !bathrooms || !bedrooms || !beds) {
         return  res.status(400).send({ err: 'Missing required fields to update property' })
     }
     
-    const property= _getEmptyProperty(name, type,imgUrls, price, summary, capacity, amenities, accessibility, bathrooms, bedrooms, beds, rules, labels)
+    const property= _getEmptyProperty(name, type,imgUrls, price, summary, capacity, amenities, accessibility, bathrooms, bedrooms, beds, rules, labels, req.loginToken._id, loc)
     try {
+        console.log('property in controller:', property)
         const addedProperty = await propertyService.save(property)
         //await usersService.setNewPropertyToHost(addedProperty._id, addedProperty.ownerId)
         res.send(await _prepForUI(addedProperty))
@@ -64,27 +64,34 @@ export async function addProperty(req, res) {
 
 }
 export async function updateProperty(req, res) {
+    const { propertyId } = req.params
     const {name, type,imgUrls, price, summary, capacity, amenities, accessibility, bathrooms, bedrooms, beds, rules, labels} = req.body
     if (!name || !type || !price || !summary || !capacity || !amenities || !accessibility || !bathrooms || !bedrooms || !beds) {
         return  res.status(400).send({ err: 'Missing required fields to update property' })
     }
     
-    const property= _getEmptyProperty(name, type,imgUrls, price, summary, capacity, amenities, accessibility, bathrooms, bedrooms, beds, rules, labels)
+    const changeValues= {_id:propertyId, name, type, imgUrls, price, summary, capacity, amenities, accessibility, bathrooms, bedrooms, beds, rules, labels}
     try {
         const existingProperty = await propertyService.getById(propertyId)
         if (!existingProperty) {
             return res.status(404).send({ err: `Property with id ${propertyId} not found` })
         }
+        if (existingProperty.host.toString() !== req.loginToken._id) {
+            return res.status(403).send({ err: 'You are not authorized to update this property' })
+        }
+        /*
         for (const field of Object.keys(existingProperty)) {
             if (property[field] === undefined) {
                 property[field] = existingProperty[field]
             }
         }
-        const updatedProperty = await propertyService.save(property)
+        */
+        const updatedProperty = await propertyService.save(changeValues)
         res.send(await _prepForUI(updatedProperty))
     }
     catch (err) {
         loggerService.error('Cannot update property', err)
+        console.log(err.stack)
         res.status(400).send({ err: 'Cannot update property' })
     }
 }
@@ -119,7 +126,6 @@ function _getFilterFromSearchParams(searchParams) {
     const filterBy = {}
     for (const field in defaultFilter) {
         if (Array.isArray(defaultFilter[field])){
-            //console.log('array field parse:', field, filterBy[field], JSON.parse(searchParams.get(field)))
             const paramValue = searchParams.get(field) ? JSON.parse(searchParams.get(field)) : defaultFilter[field]
             if (!paramValue.length) continue
             filterBy[field] = paramValue
@@ -188,40 +194,6 @@ function _getDefaultFilter() {
     }
 }
 
-/*
-function _propertyFromSearchParams(searchParams){
-    const emptyProperty = _getEmptyProperty()
-    const newProperty = {}
-    for (const field in emptyProperty) {
-        if (Array.isArray(emptyProperty[field])){
-           //console.log('array field parse:', field, filterBy[field], JSON.parse(searchParams.get(field)))
-            newProperty[field] = searchParams.get(field) ? JSON.parse(searchParams.get(field)) : emptyProperty[field]
-            continue
-        }
-        else if (emptyProperty[field] instanceof Object) {
-            for (const subField in emptyProperty[field]) {
-                const key = `${field}.${subField}`
-                newProperty[field] = newProperty[field] || {}
-                if (field === 'capacity' || ( field === 'loc' && (subField === 'lat' || subField === 'lng'))) {
-                    newProperty[field][subField] = +searchParams.get(key) || emptyProperty[field][subField]
-                }
-                else {
-                    newProperty[field][subField] = searchParams.get(key) || emptyProperty[field][subField]
-                }
-            }
-            continue
-        }
-        else if (field === 'name' || field === 'type' || field === 'summary' ) {
-            newProperty[field] = searchParams.get(field) || emptyProperty[field]
-        }
-        else if (field === 'price' || field === 'bathrooms' || field === 'bedrooms' || field === 'beds') {
-            newProperty[field] = +searchParams.get(field) || emptyProperty[field]
-        }
-    }
-    return newProperty
-}
-*/
-
 function _getEmptyProperty( name = '', 
                            type= null,
                            imgUrls= [], 
@@ -235,7 +207,7 @@ function _getEmptyProperty( name = '',
                            beds= 1,
                            rules= [],
                            labels= [],
-                           host=  {fullname: "", imgUrl: "", _id: ""},
+                           host= null,
                            loc= {country: null, countryCode: null, city: null, address: null, lat: 0, lng: 0},
                            reviews= []) {
     return { name,
@@ -263,7 +235,6 @@ async function _prepForUI(property) {
     const propertyReviews = await reviewService.getReviewsByPropertyId(property._id);
     prepProperty.reviews = await Promise.all(propertyReviews.map( async review => {
         const { _id, txt, rate, by } = review;
-        console.log('Preparing review for UI:', by.toString());
         return {
             _id,
             txt,

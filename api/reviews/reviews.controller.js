@@ -15,7 +15,6 @@ export async function postReview(req, res) {
         res.send(ansReview)
     } catch (err) {
         loggerService.error('Cannot post review', err)
-        console.log(err.stack);
         res.status(400).send({ err: 'Cannot post review' })
     }
 }

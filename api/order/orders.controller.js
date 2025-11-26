@@ -36,7 +36,7 @@ export async function getOrderById(req, res) {
     try {
         
         const order = await ordersService.getById(orderId)
-        res.send(_prepForUI(order))
+        res.send(await _prepForUI(order))
         loggerService.info(`Order ${orderId} retrieved successfully`)
     }
     catch (err) {
@@ -48,14 +48,13 @@ export async function getOrderById(req, res) {
 export async function addOrder(req, res) {
     const {propertyId, guest, checkIn, checkOut, guests} = req.body;
     
-    console.log('Received order data:', orderData);
     try {
         if (!propertyId || !guest || !checkIn || !checkOut || !guests || guest?.adults<=0 || guest?.kids<0 || guest?.infants<0 || guest?.pets<0 ) 
             throw new Error('Missing required fields: propertyId, guest, checkIn, checkOut, guests with valid counts')
         const orderData = {propertyId, guest, checkIn, checkOut, guests};
         await setTotalPrice(orderData, orderData.propertyId);
         const addedOrder = await ordersService.save(orderData)
-        res.send(_prepForUI(addedOrder))
+        res.send(await _prepForUI(addedOrder))
         loggerService.info(`Order ${addedOrder._id} added successfully`)
     }
     catch (err) {
@@ -83,9 +82,9 @@ export async function updateOrder(req, res) {
             await setTotalPrice(tmpOrder, existingOrder.propertyId);
             orderData.totalPrice=tmpOrder.totalPrice;
         }
-        console.log('Order data to be saved:', orderData);
         const updatedOrder = await ordersService.save(orderData)
-        res.send(_prepForUI(updatedOrder))
+        console.log('updatedOrder:', updatedOrder);
+        res.send(await _prepForUI(updatedOrder))
         loggerService.info(`Order ${orderId} updated successfully`)
     }
     catch (err) {
@@ -107,32 +106,14 @@ export async function removeOrder(req, res) {
     }
 }
 
-function _orderFromSearchParams(searchParams, orderdata={}) {
-    const order={
-        propertyId: searchParams.get('propertyId') || (orderdata.propertyId || '') ,
-        guest: searchParams.get('guest') || (orderdata.buyerId || '') ,
-        startDate: searchParams.get('checkIn') || (orderdata.startDate || '') ,
-        endDate: searchParams.get('checkOut') || (orderdata.endDate || '') ,
-        guests:{
-            adults: +searchParams.get('guests.adults') || (orderdata.guests?.adults || 1),
-            kids: +searchParams.get('guests.kids') || (orderdata.guests?.kids || 0),
-            infants: +searchParams.get('guests.infants') || (orderdata.guests?.infants || 0),
-            pets: +searchParams.get('guests.pets') || (orderdata.guests?.pets || 0),
-        }
-    }
-    return order;
-}
-
-function _prepForUI(order) {
+async function _prepForUI(order) {
     const prepOrder={...order};
-    const property = propertyService.getById(prepOrder.propertyId);
+    const property = await propertyService.getById(prepOrder.propertyId);
     delete prepOrder.propertyId;
-    prepOrder.checkIn = prepOrder.startDate;
-    prepOrder.checkOut = prepOrder.endDate;
-    delete prepOrder.startDate;
-    delete prepOrder.endDate;
-    prepOrder.guest = usersService.getMiniUserById(prepOrder.guest);
-    prepOrder.host = usersService.getMiniUserById(property.host);
+    prepOrder.checkIn 
+    prepOrder.checkOut 
+    prepOrder.guest = await usersService.getMiniUserById(prepOrder.guest);
+    prepOrder.host = await usersService.getMiniUserById(property.host);
     prepOrder.property = {
         _id: property._id,
         name: property.name,
@@ -144,7 +125,8 @@ function _prepForUI(order) {
 async function setTotalPrice(order, propertyId) {
     const property = await propertyService.getById(propertyId);
     if (!property) throw new Error(`Property with id ${propertyId} not found`);
-    const checkInDate = Date.parse(order.startDate);
-    const checkOutDate = Date.parse(order.endDate);
+    const checkInDate = Date.parse(order.checkIn);
+    const checkOutDate = Date.parse(order.checkOut);
     order.totalPrice = property.price * ((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+
 }

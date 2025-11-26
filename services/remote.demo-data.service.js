@@ -297,10 +297,12 @@ async function setDemoData() {
     const usersCollection = await dbService.getCollection(USER_COLLECTION);
     const propertiesCollection = await dbService.getCollection(PROPERTY_COLLECTION);
     const ordersCollection = await dbService.getCollection(ORDER_COLLECTION);
+    const reviewsCollection = await dbService.getCollection(REVIEW_COLLECTION);
 
     await usersCollection.deleteMany({})
     await propertiesCollection.deleteMany({})
     await ordersCollection.deleteMany({})
+    await reviewsCollection.deleteMany({})
 
     await usersCollection.insertMany(await Promise.all(users.map(async user=>({ ...user, password: await bcrypt.hash('password123', 10)}))))
 

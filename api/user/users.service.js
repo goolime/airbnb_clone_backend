@@ -1,4 +1,3 @@
-//import { utilService } from './util.service.js'
 import { loggerService } from "../../services/logger.service.js"
 import { makeId, readJsonFile, writeJsonFile } from '../../services/utils.js'
 import bcrypt from 'bcrypt'
@@ -9,10 +8,6 @@ import { propertyService } from "../property/property.service.js";
 const COLLECTION_NAME = 'airbnb_users'
 const saltRounds = 10;
 
-//const DATA_PATH = './data/user.json'
-
-//const users = readJsonFile(DATA_PATH)
-
 export const usersService = {
     getById,
     remove,
@@ -20,31 +15,22 @@ export const usersService = {
     removePropertyFromHost,
     setNewPropertyToHost,
     getMiniUserById,
-    login
+    login,
+    getEmptyUser
 }
 
 async function getById(userId) {
     try {
-        console.log('Getting user by id:', userId);
         const criteria={_id: ObjectId.createFromHexString(userId.toString())}
         const collection = await dbService.getCollection(COLLECTION_NAME)
         const user = await collection.findOne(criteria)
-        console.log('User found:', user);
         if (!user) throw new Error(`User with id ${userId} not found!`)
         delete user.password;
         return await _prepUser(user)  
     } catch (err) {
-        console.log('Error getting user by id:', err);
-        console.log(err.stack);
         loggerService.error('Cannot get user by id', err)
         throw err
     }
-    /*
-    const user = {...users.find(user => user._id === userId)}
-    if (!user) throw new Error(`User with id ${userId} not found!`)
-    delete user.password;
-    return user
-    */
 }
 
 async function remove(userId) {
@@ -59,14 +45,6 @@ async function remove(userId) {
         loggerService.error('Cannot remove user', err)
         throw err
     }
-    /*
-    const idx = users.findIndex(user => user._id === userId)
-    if (idx === -1) throw new Error(`User with id ${userId} not found!`)
-    const userProperties = [...users[idx].properties]
-    users.splice(idx, 1)
-    writeJsonFile(DATA_PATH, users)
-    return userProperties;
-    */
 }
 
 async function save(user) {
@@ -82,7 +60,7 @@ async function save(user) {
                 }
             }
             if (user.password) {
-                updateData.$set.password = await bcrypt.hashSync(user.password, saltRounds)
+                updateData.$set.password = await bcrypt.hash(user.password, saltRounds)
             }
             const result = await collection.updateOne(criteria, updateData)
             if (result.matchedCount === 0) throw new Error(`User with id ${user._id} not found!`)
@@ -96,36 +74,19 @@ async function save(user) {
                 fullname: user.fullname,
                 imgUrl: user.imgUrl,
                 username: user.username,
-                password: await bcrypt.hashSync(user.password, saltRounds),
+                password: await bcrypt.hash(user.password, saltRounds),
                 properties: []
             }
             const insertResult = await collection.insertOne(newUser)
             newUser._id = insertResult.insertedId
             loggerService.debug(`UserService - add: ${newUser._id} added`)
+            delete newUser.password
             return newUser
         }
     } catch (err) {
         loggerService.error('Cannot save user', err)
         throw err
     }
-    /*
-        const idx = users.findIndex(u => u._id === user._id)
-        if (idx === -1) throw new Error(`User with id ${user._id} not found!`)
-        console.log('UserService - update user before change:', users[idx]);
-        changedUser = {...users[idx], ...user}
-        users[idx] = changedUser
-        console.log('UserService - update:', users[idx]);
-        console.log('UserService - update user properties:', changedUser.properties);
-        loggerService.debug(`UserService - update: ${user._id} updated`)
-    } else {
-        user._id = makeId()
-        changedUser = {...user, password: await bcrypt.hashSync(user.password, saltRounds)}
-        users.push(changedUser)
-        loggerService.debug(`UserService - add: ${user._id} added`)
-    }   
-    writeJsonFile(DATA_PATH, users)
-    return changedUser;
-    */
 }
 
 async function removePropertyFromHost(propertyId, ownerId) {
@@ -157,11 +118,11 @@ export function getEmptyUser(fullname = '', imgUrl = '', username = '', properti
 async function login(username, password) {
     try{
         const collection = await dbService.getCollection(COLLECTION_NAME)
-        const criteria={username}
+        const criteria={username}       
         const user = await collection.findOne(criteria)
         if (!user) throw new Error(`User with username ${username} not found!`)
         const match = await bcrypt.compare(password, user.password)
-        //const userToReturn = getById(user._id)
+        if (!match) throw new Error('Invalid password')
         delete user.password
         delete user.properties
         delete user.imgUrl

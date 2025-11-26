@@ -16,7 +16,7 @@ export async function registerUser(req,res){
         const user= {
             ...usersService.getEmptyUser(),
             username, 
-            password: await bcrypt.hash(password, 10), 
+            password,
             fullname, 
             imgUrl
         }

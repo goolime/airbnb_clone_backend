@@ -1,4 +1,5 @@
 import Cryptr from 'cryptr'
+import { loggerService } from '../../services/logger.service.js'
 
 
 const cryptr = new Cryptr(process.env.SECRET1 || 'Secret-Puk-1234')
@@ -20,7 +21,7 @@ function validateToken(token) {
         const loggedinUser = JSON.parse(json)
         return loggedinUser
     } catch (err) {
-        console.log('Invalid login token', err)
+        loggerService.error('Invalid login token', err)
         throw err
     }
 }
