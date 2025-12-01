@@ -12,7 +12,8 @@ export const ordersService = {
     getOrdersByUserId,
     isPropertyAvailable,
     blockedDates,
-    removeFutureOrdersByPropertyId
+    removeFutureOrdersByPropertyId,
+    removeFutureOrdersByUserId
 }
 
 async function getById(orderId) {
@@ -125,10 +126,11 @@ async function blockedDates(propertyId, from=Date.now(), to=new Date(Date.now() 
 async function removeFutureOrdersByPropertyId(propertyId) {
     try {
         const collection = await dbService.getCollection(COLLECTION_NAME)
-        const now = new Date();
+        //const now = new Date();
         const criteria={
             propertyId: propertyId,
         }
+        /*
         const orders = await collection.find(criteria).toArray()
         console.log('orders to check for future removal found', orders.length);
         const futureOrders = orders.filter(order => {
@@ -138,13 +140,31 @@ async function removeFutureOrdersByPropertyId(propertyId) {
                 return from > now
             })
         console.log('futureOrders to be removed:', futureOrders.length);
-        const deleteResult = await collection.deleteMany({
+        */
+        const deleteResult = await collection.deleteMany(criteria) /*{
             _id: { $in: futureOrders.map(order => order._id) }
         });
+        */
         loggerService.debug(`OrderService - removeFutureOrdersByPropertyId: ${propertyId} removed ${deleteResult.deletedCount} future orders`)
     } 
     catch (err) {
         loggerService.error('Cannot remove future orders by property id', err)
+        throw err
+    }
+}
+
+async function removeFutureOrdersByUserId(userId) {
+    try {
+        const collection = await dbService.getCollection(COLLECTION_NAME)
+        //const now = new Date();
+        const criteria={
+            guest: userId,
+        }
+        const deleteResult = await collection.deleteMany(criteria)
+        loggerService.debug(`OrderService - removeFutureOrdersByUserId: ${userId} removed ${deleteResult.deletedCount} future orders`)
+    }
+    catch (err) {
+        loggerService.error('Cannot remove future orders by user id', err)
         throw err
     }
 }

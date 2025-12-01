@@ -7,7 +7,8 @@ const COLLECTION_NAME = 'airbnb_reviews'
 export const reviewService = {
     addReview,
     getReviewsByPropertyId,
-    removeReviewsByPropertyId
+    removeReviewsByPropertyId,
+    removeReviewsByUserId
 }
 
 async function addReview(review) {
@@ -48,6 +49,19 @@ async function removeReviewsByPropertyId(propertyId) {
         return deleteResult.deletedCount;
     } catch (err) {
         loggerService.error('Cannot remove reviews by property id', err)
+        throw err
+    }
+}
+
+async function removeReviewsByUserId(userId) {
+    try {
+        const collection = await dbService.getCollection(COLLECTION_NAME)
+        const criteria={by: ObjectId.createFromHexString(userId.toString())  }
+        const deleteResult = await collection.deleteMany(criteria)
+        loggerService.debug(`ReviewService - removeReviewsByUserId: ${userId} removed ${deleteResult.deletedCount} reviews`)
+        return deleteResult.deletedCount;
+    } catch (err) {
+        loggerService.error('Cannot remove reviews by user id', err)
         throw err
     }
 }

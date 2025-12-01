@@ -4,6 +4,7 @@ import { ordersService } from '../order/orders.services.js'
 
 import { dbService } from '../../services/db.service.js'
 import { ObjectId } from 'mongodb'
+import { removeProperty } from './property.controller.js'
 
 const COLLECTION_NAME = 'airbnb_properties'
 
@@ -35,10 +36,12 @@ async function query(filterBy,orderBy = { field: 'name', direction: 1 }) {
                 criteria[field] = { $all: filterBy[field] } 
                 break
             case 'minPrice':
+                if (!filterBy.minPrice) break
                 if (filterBy.minPrice > filterBy?.maxPrice) throw new Error('minPrice cannot be greater than maxPrice')
                 criteria.price = { ...criteria.price, $gte: filterBy.minPrice }
                 break
             case 'maxPrice':
+                if (!filterBy.maxPrice) break
                 if (filterBy.maxPrice <= 0) throw new Error('maxPrice must be greater than 0')
                 criteria.price = { ...criteria.price, $lte: filterBy.maxPrice }
                 break   

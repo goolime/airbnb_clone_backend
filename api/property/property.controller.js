@@ -106,8 +106,12 @@ export async function getPropertiesByCity(req, res) {
         minLng: +searchParams.get('minLng') || -180,
         maxLng: +searchParams.get('maxLng') || 180,
     }
+
+    loggerService.info(`Getting properties in city: ${city.city}, ${city.countryCode}, within latitudes ${city.minLat} to ${city.maxLat} and longitudes ${city.minLng} to ${city.maxLng}`)
+
     try {
         const cityProperties = await propertyService.getPropertiesByCity(city)
+        loggerService.info(`Found ${cityProperties.length} properties in city: ${city.city}, ${city.countryCode}`)
         res.send(await Promise.all(cityProperties.map(async property => await _prepForUI(property))))
     }
     catch (err) {
