@@ -1,3 +1,4 @@
+import { exit } from 'process';
 import { dbService } from './services/db.service.js';
 
 const USER_COLLECTION = 'airbnb_users';
@@ -14,3 +15,5 @@ await usersCollection.deleteMany({})
 await propertiesCollection.deleteMany({})
 await ordersCollection.deleteMany({})
 await reviewsCollection.deleteMany({})
+
+exit();

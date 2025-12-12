@@ -8,7 +8,8 @@ export async function getOrdersByPropertyId(req, res) {
     try {
         const orders = await ordersService.getOrdersByPropertyId(propertyId)
         loggerService.info(`Orders for property ${propertyId} retrieved successfully`)
-        res.send(orders)
+
+        res.send(await Promise.all(orders.map(order=>_prepForUI(order))))
     }
     catch (err) {
         loggerService.error(`Cannot get orders for property ${propertyId}`, err)
@@ -21,7 +22,7 @@ export async function getOrdersByUserId(req, res) {
     try {
         const orders = await ordersService.getOrdersByUserId(userId)
         loggerService.info(`Orders for user ${userId} retrieved successfully`)
-        res.send(orders)
+        res.send(await Promise.all(orders.map(order=>_prepForUI(order))))
     }
     catch (err) {
         loggerService.error(`Cannot get orders for user ${userId}`, err)
@@ -125,6 +126,6 @@ async function setTotalPrice(order, propertyId) {
     if (!property) throw new Error(`Property with id ${propertyId} not found`);
     const checkInDate = Date.parse(order.checkIn);
     const checkOutDate = Date.parse(order.checkOut);
-    order.totalPrice = property.price * ((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+    order.totalPrice = property.price * ((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)) * 1.18 * 1.1;
 
 }
