@@ -384,8 +384,8 @@ function getEmptyProperty( name = '',
          }
 }
 
-function getEmptyUser(fullname = '', imgUrl = '', username = '', properties = []) {
-    return { fullname, imgUrl, username, properties }
+function getEmptyUser(fullname = '', imgUrl = '', username = '', whishlist = []) {
+    return { fullname, imgUrl, username, whishlist }
 }
 
 export async function validateDATA() {

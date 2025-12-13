@@ -6,6 +6,7 @@ import { usersService } from './users.service.js'
 
 
 
+
 export async function getUser (req,res){
     const { userId } = req.params
     try {
@@ -58,5 +59,30 @@ export async function deleteUser(req,res){
     } catch (err) {
         loggerService.error(`Cannot remove user ${userId}`, err)
         res.status(400).send({ err: `Cannot remove user ${userId}` })
+    }
+}
+
+// wishlist
+export async function addToWishlist(req, res) {
+    const { userId, propertyId } = req.params
+    try {
+        const updatedUser = await usersService.addToWishlist(userId, propertyId)
+        res.send(updatedUser)
+        loggerService.info(`Property ${propertyId} added to wishlist of user ${userId}`)
+    } catch (err) {
+        loggerService.error(`Cannot add property ${propertyId} to wishlist of user ${userId}`, err)
+        res.status(400).send({ err: `Cannot add property ${propertyId} to wishlist of user ${userId}` })
+    }
+}
+
+export async function removeFromWishlist(req, res) {
+    const { userId, propertyId } = req.params
+    try {
+        const updatedUser = await usersService.removeFromWishlist(userId, propertyId)
+        res.send(updatedUser)
+        loggerService.info(`Property ${propertyId} removed from wishlist of user ${userId}`)
+    } catch (err) {
+        loggerService.error(`Cannot remove property ${propertyId} from wishlist of user ${userId}`, err)
+        res.status(400).send({ err: `Cannot remove property ${propertyId} from wishlist of user ${userId}` })
     }
 }

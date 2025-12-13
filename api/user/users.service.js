@@ -15,7 +15,9 @@ export const usersService = {
     removePropertyFromHost,
     getMiniUserById,
     login,
-    getEmptyUser
+    getEmptyUser,
+    addToWishlist,
+    removeFromWishlist
 }
 
 async function getById(userId) {
@@ -103,8 +105,8 @@ async function getMiniUserById(userId) {
     }
 }
 
-export function getEmptyUser(fullname = '', imgUrl = '', username = '', properties = []) {
-    return { fullname, imgUrl, username, properties }
+export function getEmptyUser(fullname = '', imgUrl = '', username = '', whishlist = []) {
+    return { fullname, imgUrl, username, wishlist }
 }
 
 async function login(username, password) {
@@ -133,4 +135,41 @@ async function _prepUser(user) {
         username: user.username,
         properties: await propertyService.getPropertiesByUserId(user._id.toString())
     }
+}
+
+async function addToWishlist(userId, propertyId) {
+    try {
+        const user = await getById(userId)
+        if (!user) throw new Error(`User with id ${userId} not found!`)
+        if (!user.wishlist) user.wishlist = []
+        if (!user.wishlist.includes(propertyId)) {
+            user.wishlist.push(propertyId)
+            const collection = await dbService.getCollection(COLLECTION_NAME)
+            const criteria={_id: ObjectId.createFromHexString(userId)}
+            const updateData = {$set: {wishlist: user.wishlist}}
+            await collection.updateOne(criteria, updateData)
+        }
+        return user
+    } catch (err) {
+        loggerService.error('Cannot add to wishlist', err)
+        throw err
+    }
+}
+
+async function removeFromWishlist(userId, propertyId) {
+    try {
+        const user = await getById(userId)
+        if (!user) throw new Error(`User with id ${userId} not found!`)
+        if (user.wishlist && user.wishlist.includes(propertyId)) {
+            user.wishlist = user.wishlist.filter(id => id !== propertyId)
+            const collection = await dbService.getCollection(COLLECTION_NAME)
+            const criteria={_id: ObjectId.createFromHexString(userId)}
+            const updateData = {$set: {wishlist: user.wishlist}}
+            await collection.updateOne(criteria, updateData)
+        }
+        return user
+    } catch (err) { 
+        loggerService.error('Cannot remove from wishlist', err)
+        throw err
+    }   
 }
