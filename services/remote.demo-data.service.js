@@ -318,7 +318,6 @@ async function setDemoData() {
             getReviews(Math.floor(Math.random()*12+3),id)
             const hostId = dp.host
             const host = await usersCollection.findOne({_id: hostId})
-            host.properties.push(id)
             await usersCollection.updateOne({_id: hostId}, {$set: {properties: host.properties}})
         }
     }
