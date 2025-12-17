@@ -133,7 +133,8 @@ async function _prepUser(user) {
         fullname: user.fullname,
         imgUrl: user.imgUrl,
         username: user.username,
-        properties: await propertyService.getPropertiesByUserId(user._id.toString())
+        properties: await propertyService.getPropertiesByUserId(user._id.toString()),
+        wishlist: user.wishlist || []
     }
 }
 
