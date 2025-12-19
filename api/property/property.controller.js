@@ -96,7 +96,7 @@ export async function updateProperty(req, res) {
     }
 }
 
-const citysCache = new Map();
+const citysCache = {};
 const citys=[{ countryCode: 'US', city: 'New York', minLat: 40.4774, maxLat: 40.9176, minLng: -74.2591, maxLng: -73.7004 },
              { countryCode: 'FR', city: 'Paris', minLat: 48.8156, maxLat: 48.9022, minLng: 2.2241, maxLng: 2.4699 },
              { countryCode: 'JP', city: 'Tokyo', minLat: 35.5285, maxLat: 35.8395, minLng: 139.6100, maxLng: 139.9100 },
@@ -118,6 +118,7 @@ const citys=[{ countryCode: 'US', city: 'New York', minLat: 40.4774, maxLat: 40.
              { countryCode: 'SE', city: 'Stockholm', minLat: 59.2000, maxLat: 59.4500, minLng: 17.8000, maxLng: 18.2000 },
              { countryCode: 'CH', city: 'Zurich', minLat: 47.3200, maxLat: 47.4500, minLng: 8.4500, maxLng: 8.6500 }
             ]
+
 setInterval(() => {
     for (const city of citys) {
         propertyService.getPropertiesByCity(city)
@@ -144,18 +145,18 @@ export async function getPropertiesByCity(req, res) {
 
     loggerService.info(`Getting properties in city: ${city.city}, ${city.countryCode}, within latitudes ${city.minLat} to ${city.maxLat} and longitudes ${city.minLng} to ${city.maxLng}`)
 
-    if (citysCache.has(`${city.countryCode}-${city.city}`)) {
-        const cachedProperties = citysCache.get(`${city.countryCode}-${city.city}`);
+    if (Object.keys(citysCache).find(key => key === `${city.countryCode}-${city.city}`)) {
+        const cachedProperties = citysCache[`${city.countryCode}-${city.city}`];
         loggerService.info(`Serving from cache: Found ${cachedProperties.length} properties in city: ${city.city}, ${city.countryCode}`)
         return res.send(cachedProperties);
     }
 
     try {
-        if (citys.find(!(c => c.countryCode === city.countryCode && c.city === city.city))) citys.push(city);
+        if (!citys.find((c => c.countryCode === city.countryCode && c.city === city.city))) citys.push(city);
         const cityProperties = await propertyService.getPropertiesByCity(city)
         loggerService.info(`Found ${cityProperties.length} properties in city: ${city.city}, ${city.countryCode}`)
-        citysCache.set(`${city.countryCode}-${city.city}`, await Promise.all(cityProperties.map(async property => await _prepForUI(property))));
-        res.send(citysCache.get(`${city.countryCode}-${city.city}`));
+        citysCache[`${city.countryCode}-${city.city}`] = await Promise.all(cityProperties.map(async property => await _prepForUI(property)));
+        res.send(citysCache[`${city.countryCode}-${city.city}`]);
     }
     catch (err) {
         loggerService.error('Cannot get properties by city', err)
