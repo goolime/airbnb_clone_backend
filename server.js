@@ -8,6 +8,7 @@ import { Server } from 'socket.io';
 
 const app = express();
 const server = createServer(app);
+app.set('trust proxy', 1);
 
 // Configure Socket.io with CORS
 const io = new Server(server, {
