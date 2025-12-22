@@ -4,10 +4,10 @@ import { dbService } from "./db.service.js";
 import { ObjectId } from "mongodb";
 import bcrypt from "bcrypt";
 
-const USER_COLLECTION = 'airbnb_users'
-const PROPERTY_COLLECTION = 'airbnb_properties'
-const ORDER_COLLECTION = 'airbnb_orders'
-const REVIEW_COLLECTION = 'airbnb_reviews'
+const USER_COLLECTION = 'airdnd_users'
+const PROPERTY_COLLECTION = 'airdnd_properties'
+const ORDER_COLLECTION = 'airdnd_orders'
+const REVIEW_COLLECTION = 'airdnd_reviews'
 
 const NUM_OF_PROPERTIES = 40
 

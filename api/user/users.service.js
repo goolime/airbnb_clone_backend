@@ -5,7 +5,7 @@ import { dbService } from "../../services/db.service.js";
 import { ObjectId } from 'mongodb';
 import { propertyService } from "../property/property.service.js";
 
-const COLLECTION_NAME = 'airbnb_users'
+const COLLECTION_NAME = 'airdnd_users'
 const saltRounds = 10;
 
 export const usersService = {

@@ -6,7 +6,7 @@ import { dbService } from '../../services/db.service.js'
 import { ObjectId } from 'mongodb'
 import { removeProperty } from './property.controller.js'
 
-const COLLECTION_NAME = 'airbnb_properties'
+const COLLECTION_NAME = 'airdnd_properties'
 
 export const propertyService = {
     query,

@@ -2,7 +2,7 @@ import { loggerService } from "../../services/logger.service.js"
 import { dbService } from "../../services/db.service.js"
 import { ObjectId } from 'mongodb'
 
-const COLLECTION_NAME = 'airbnb_orders'    
+const COLLECTION_NAME = 'airdnd_orders'    
 
 export const ordersService = {
     getById,

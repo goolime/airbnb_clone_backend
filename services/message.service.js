@@ -24,7 +24,7 @@ async function getMessages(chatId, limit = 50, before = null) {
             { $limit: limit },
             {
                 $lookup: {
-                    from: 'airbnb_users',
+                    from: 'airdnd_users',
                     localField: 'senderId',
                     foreignField: '_id',
                     as: 'sender'
@@ -71,7 +71,7 @@ async function createMessage(chatId, senderId, content) {
             { $match: { _id: result.insertedId } },
             {
                 $lookup: {
-                    from: 'airbnb_users',
+                    from: 'airdnd_users',
                     localField: 'senderId',
                     foreignField: '_id',
                     as: 'sender'

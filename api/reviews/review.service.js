@@ -2,7 +2,7 @@ import { dbService } from "../../services/db.service.js";
 import { loggerService } from "../../services/logger.service.js";
 import { ObjectId } from 'mongodb';
 
-const COLLECTION_NAME = 'airbnb_reviews'
+const COLLECTION_NAME = 'airdnd_reviews'
 
 export const reviewService = {
     addReview,

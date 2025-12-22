@@ -24,7 +24,7 @@ async function getUserChats(userId) {
             },
             {
                 $lookup: {
-                    from: 'airbnb_properties',
+                    from: 'airdnd_properties',
                     localField: 'propertyId',
                     foreignField: '_id',
                     as: 'property'
@@ -35,7 +35,7 @@ async function getUserChats(userId) {
             },
             {
                 $lookup: {
-                    from: 'airbnb_users',
+                    from: 'airdnd_users',
                     localField: 'participants.userId',
                     foreignField: '_id',
                     as: 'participantDetails'
@@ -131,16 +131,16 @@ async function findOrCreateChat(propertyId, guestId, hostId) {
     console.log('Looking up users:', [guestId, hostId]);
 
     // Check if property exists
-    const propertyExists = await db.collection('airbnb_properties').findOne({
+    const propertyExists = await db.collection('airdnd_properties').findOne({
         _id: new ObjectId(propertyId)
     });
     console.log('Property exists?', !!propertyExists, propertyExists?._id);
 
     // Check if users exist
-    const guestExists = await db.collection('airbnb_users').findOne({
+    const guestExists = await db.collection('airdnd_users').findOne({
         _id: new ObjectId(guestId)
     });
-    const hostExists = await db.collection('airbnb_users').findOne({
+    const hostExists = await db.collection('airdnd_users').findOne({
         _id: new ObjectId(hostId)
     });
     console.log('Guest exists?', !!guestExists, guestExists?._id);
@@ -150,7 +150,7 @@ async function findOrCreateChat(propertyId, guestId, hostId) {
             { $match: { _id: chat._id } },
             {
                 $lookup: {
-                    from: 'airbnb_properties',
+                    from: 'airdnd_properties',
                     localField: 'propertyId',
                     foreignField: '_id',
                     as: 'property'
@@ -164,7 +164,7 @@ async function findOrCreateChat(propertyId, guestId, hostId) {
             },
             {
                 $lookup: {
-                    from: 'airbnb_users',
+                    from: 'airdnd_users',
                     localField: 'participants.userId',
                     foreignField: '_id',
                     as: 'participantDetails'
