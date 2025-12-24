@@ -39,9 +39,9 @@ async function save(order) {
             delete order._id
             const updateResult = await collection.updateOne(criteria, { $set: order })
             if (updateResult.matchedCount === 0) throw new Error(`Order with id ${order._id} not found!`)
-            order._id = criteria._id
-            loggerService.debug(`OrderService - update: ${order._id} updated`)
+                order._id = criteria._id
         } else {
+            loggerService.debug(`OrderService - update: ${order._id} updated`)
             console.log('adding order:', order)
             const insertResult = await collection.insertOne(order)
             order._id = insertResult.insertedId

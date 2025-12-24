@@ -27,6 +27,7 @@ const corsOptions = {
         'http://localhost:5173',
         'http://127.0.0.1:5174',
         'http://localhost:5174',
+        process.env.CLIENT_URL
     ],
     credentials: true
 }
@@ -96,7 +97,7 @@ const port = process.env.PORT || 3030
 async function startServer() {
     try {
 
-        await dbService.getCollection('users')
+        await dbService.getCollection('airdnd_users')
         loggerService.info('Database connected successfully')
         
         server.listen(port, () => {

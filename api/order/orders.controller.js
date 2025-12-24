@@ -2,6 +2,7 @@ import { ordersService } from './orders.services.js'
 import { propertyService } from '../property/property.service.js'
 import { loggerService } from '../../services/logger.service.js'
 import { usersService } from '../user/users.service.js'
+import { ObjectId } from 'mongodb'
 
 export async function getOrdersByPropertyId(req, res) {
     const { propertyId } = req.params
@@ -9,7 +10,7 @@ export async function getOrdersByPropertyId(req, res) {
         const orders = await ordersService.getOrdersByPropertyId(propertyId)
         loggerService.info(`Orders for property ${propertyId} retrieved successfully`)
 
-        res.send(await Promise.all(orders.map(order=>_prepForUI(order))))
+        res.send(await Promise.all(orders.map(order => _prepForUI(order))))
     }
     catch (err) {
         loggerService.error(`Cannot get orders for property ${propertyId}`, err)
@@ -22,7 +23,7 @@ export async function getOrdersByUserId(req, res) {
     try {
         const orders = await ordersService.getOrdersByUserId(userId)
         loggerService.info(`Orders for user ${userId} retrieved successfully`)
-        res.send(await Promise.all(orders.map(order=>_prepForUI(order))))
+        res.send(await Promise.all(orders.map(order => _prepForUI(order))))
     }
     catch (err) {
         loggerService.error(`Cannot get orders for user ${userId}`, err)
@@ -33,7 +34,7 @@ export async function getOrdersByUserId(req, res) {
 export async function getOrderById(req, res) {
     const { orderId } = req.params
     try {
-        
+
         const order = await ordersService.getById(orderId)
         res.send(await _prepForUI(order))
         loggerService.info(`Order ${orderId} retrieved successfully`)
@@ -45,12 +46,21 @@ export async function getOrderById(req, res) {
 }
 
 export async function addOrder(req, res) {
-    const {propertyId, guest, checkIn, checkOut, guests} = req.body;
-    
+    console.log('addOrder called with body:', req.body);
+    const { propertyId, guest, checkIn, checkOut, guests } = req.body;
+
     try {
-        if (!propertyId || !guest || !checkIn || !checkOut || !guests || guest?.adults<=0 || guest?.kids<0 || guest?.infants<0 || guest?.pets<0 ) 
+        if (!propertyId || !guest || !checkIn || !checkOut || !guests || guests?.adults <= 0 || guests?.kids < 0 || guests?.infants < 0 || guests?.pets < 0)
             throw new Error('Missing required fields: propertyId, guest, checkIn, checkOut, guests with valid counts')
-        const orderData = {propertyId, guest, checkIn, checkOut, guests};
+
+        const orderData = {
+            propertyId: ObjectId.createFromHexString(propertyId),
+            guest: ObjectId.createFromHexString(guest),
+            checkIn,
+            checkOut,
+            guests
+        };
+
         await setTotalPrice(orderData, orderData.propertyId);
         const addedOrder = await ordersService.save(orderData)
         res.send(await _prepForUI(addedOrder))
@@ -61,25 +71,26 @@ export async function addOrder(req, res) {
         res.status(400).send({ err: `Cannot add order` })
     }
 }
+
 export async function updateOrder(req, res) {
     const { orderId } = req.params
-    const { checkIn, checkOut, guests} = req.body;
-    const orderData = {startDate: checkIn, endDate: checkOut, guests};
-    if(!orderData.startDate) delete orderData.startDate;
-    if(!orderData.endDate) delete orderData.endDate;
-    if(!orderData.guests || Object.keys(orderData.guests).length===0) delete orderData.guests;
+    const { checkIn, checkOut, guests } = req.body;
+    const orderData = { startDate: checkIn, endDate: checkOut, guests };
+    if (!orderData.startDate) delete orderData.startDate;
+    if (!orderData.endDate) delete orderData.endDate;
+    if (!orderData.guests || Object.keys(orderData.guests).length === 0) delete orderData.guests;
     try {
-        if (Object.keys(orderData).length===0) 
+        if (Object.keys(orderData).length === 0)
             return res.status(400).send({ err: `No fields to update for order ${orderId}` })
-        
+
         orderData._id = orderId;
-        if(orderData.startDate || orderData.endDate){
+        if (orderData.startDate || orderData.endDate) {
             const existingOrder = await ordersService.getById(orderId);
-            const tmpOrder = {...await ordersService.getById(orderId)}
-            if(orderData.startDate) tmpOrder.startDate=orderData.startDate;
-            if(orderData.endDate) tmpOrder.endDate=orderData.endDate;
+            const tmpOrder = { ...await ordersService.getById(orderId) }
+            if (orderData.startDate) tmpOrder.startDate = orderData.startDate;
+            if (orderData.endDate) tmpOrder.endDate = orderData.endDate;
             await setTotalPrice(tmpOrder, existingOrder.propertyId);
-            orderData.totalPrice=tmpOrder.totalPrice;
+            orderData.totalPrice = tmpOrder.totalPrice;
         }
         const updatedOrder = await ordersService.save(orderData)
         console.log('updatedOrder:', updatedOrder);
@@ -106,11 +117,11 @@ export async function removeOrder(req, res) {
 }
 
 async function _prepForUI(order) {
-    const prepOrder={...order};
+    const prepOrder = { ...order };
     const property = await propertyService.getById(prepOrder.propertyId);
     delete prepOrder.propertyId;
-    prepOrder.checkIn 
-    prepOrder.checkOut 
+    prepOrder.checkIn
+    prepOrder.checkOut
     prepOrder.guest = await usersService.getMiniUserById(prepOrder.guest);
     prepOrder.host = await usersService.getMiniUserById(property.host);
     prepOrder.property = {
