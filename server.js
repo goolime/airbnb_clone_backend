@@ -80,6 +80,7 @@ import userRoutes from './api/user/user.routs.js'
 import orderRoutes from './api/order/orders.routs.js'
 import authRoutes from './api/auth/auth.routes.js'
 import chatRoutes from './api/chat/chat.routes.js'
+import { initializePropertyIndexes } from './services/initializeIndexes.js'
 
 app.use('/api/property', propertyRoutes)
 app.use('/api/user', userRoutes)
@@ -99,7 +100,7 @@ async function startServer() {
 
         await dbService.getCollection('airdnd_users')
         loggerService.info('Database connected successfully')
-        
+        await initializePropertyIndexes()
         server.listen(port, () => {
             loggerService.info(`Server listening on port http://localhost:${port}/`)
             loggerService.info(`Socket.io ready for connections`)
